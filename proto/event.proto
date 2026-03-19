@@ -9,6 +9,7 @@ enum EventType {
     FILE_MODIFY = 3;
     CHANGE_PERMISSION = 4;
     CHANGE_OWNERSHIP  = 5;
+    FILE_SCAN = 6; //sent on startup/reconnect for baseline verification
 }
 
 message FileEvent {
@@ -23,4 +24,13 @@ message FileEvent {
     uint32    user_id  = 9;
     uint32    group_id  = 10;
     int64     timestamp  = 11;
+}
+
+message Ack {
+    bool success = 1;
+}
+
+//service for sending file events
+service FileEventService{
+        rpc sendFileEvent(stream FileEvent) returns (Ack);
 }

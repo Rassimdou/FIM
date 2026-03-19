@@ -1,0 +1,24 @@
+agent:
+  id: auto
+
+server:
+  address: localhost:9000
+  tls: false
+
+watch:
+  paths:
+    - /etc
+    - /var/log
+    - /home
+  recursive: true
+
+events:
+  include:
+    - FILE_CREATE
+    - FILE_MODIFY
+    - FILE_DELETE
+    - CHANGE_PERMISSION
+    - CHANGE_OWNERSHIP
+
+scan:
+  on_reconnect: true
