@@ -1,0 +1,26 @@
+syntax = "proto3";
+package event;
+option go_package = "github.com/Rassimdou/FIM/proto";
+
+enum EventType {
+    UNKNOWN = 0;
+    FILE_CREATE = 1;
+    FILE_DELETE = 2;
+    FILE_MODIFY = 3;
+    CHANGE_PERMISSION = 4;
+    CHANGE_OWNERSHIP  = 5;
+}
+
+message FileEvent {
+    string    hostname = 1;
+    string    os  = 2;
+    string    file_path  = 3;
+    EventType event_type  = 4;
+    string    old_hash = 5;
+    string    new_hash  = 6;
+    string    old_permissions = 7;
+    string    new_permissions = 8;
+    uint32    user_id  = 9;
+    uint32    group_id  = 10;
+    int64     timestamp  = 11;
+}
