@@ -1,7 +1,9 @@
 package agent
 
 import (
+	"context"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -43,6 +45,7 @@ func NewWatcher(cfg *Config, onEvent func(*proto.FileEvent)) (*Watcher, error) {
 		agentOS:  runtime.GOOS,
 		onEvent:  onEvent,
 	}
+	
 	//add watch paths
 	for _, root := range cfg.Watch.Paths {
 		if cfg.Watch.Recursive {
@@ -50,17 +53,20 @@ func NewWatcher(cfg *Config, onEvent func(*proto.FileEvent)) (*Watcher, error) {
 			//walk every entry under root
 			err = filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
-					return err
+					return nil
 				}
 
-				// only add directories, fsnotify watches dirs not files
 				if d.IsDir() {
 					if addErr := fsw.Add(path); addErr != nil {
 						return addErr
 					}
 				}
-				return err
+				return nil
 			})
+			if err != nil {
+				return nil, err
+			}
+
 		} else {
 			err = fsw.Add(root)
 			if err != nil {
@@ -71,4 +77,46 @@ func NewWatcher(cfg *Config, onEvent func(*proto.FileEvent)) (*Watcher, error) {
 	}
 
 	return w, nil
+}
+
+func (w *Watcher) Start(ctx context.Context) error {
+	defer w.fsw.Close()
+	for {
+		select {
+		case event := <-w.fsw.Events:
+			if time.Since(w.debounce[event.Name]) < 500*time.Millisecond {
+				continue
+			}
+			w.debounce[event.Name] = time.Now()
+			fileEvent := &proto.FileEvent{
+				Hostname:  w.hostname,
+				Os:        w.agentOS,
+				FilePath:  event.Name,
+				EventType: opToEventType(event.Op),
+				Timestamp: time.Now().UnixNano(),
+			}
+			w.onEvent(fileEvent)
+
+		case err := <-w.fsw.Errors:
+			log.Printf("watcher error: %v", err)
+
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func opToEventType(op fsnotify.Op) proto.EventType {
+	switch {
+	case op.Has(fsnotify.Create):
+		return proto.EventType_FILE_CREATE
+	case op.Has(fsnotify.Write):
+		return proto.EventType_FILE_MODIFY
+	case op.Has(fsnotify.Remove):
+		return proto.EventType_FILE_DELETE
+	case op.Has(fsnotify.Chmod):
+		return proto.EventType_CHANGE_PERMISSION
+	default:
+		return proto.EventType_UNKNOWN
+	}
 }
