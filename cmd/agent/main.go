@@ -53,6 +53,16 @@ func main() {
 		log.Fatalf("failed to create watcher: %v", err)
 	}
 
+	//start the baseline scan asynchronously so it doesn't block the watcher
+	go func() {
+		log.Println("Initiating baseline scan...")
+		if err := agent.ScanExistingFiles(ctx, cfg, func(ev *proto.FileEvent) {
+			sender.Enqueue(ev)
+		}); err != nil {
+			log.Printf("baseline scan failed: %v", err)
+		}
+	}()
+
 	//start watching
 	log.Println("Agent started. Watching for file changes...")
 	if err := watcher.Start(ctx); err != nil {
