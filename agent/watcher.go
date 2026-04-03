@@ -108,12 +108,25 @@ func (w *Watcher) Start(ctx context.Context) error {
 			if eventType == proto.EventType_UNKNOWN {
 				continue
 			}
+			//var to hold the hash
+			var hashValue string
 
+			//calculate hash for create and modify events
+			if eventType == proto.EventType_FILE_MODIFY || eventType == proto.EventType_FILE_CREATE {
+				h, err := CalculateHash(event.Name)
+				if err != nil {
+					log.Printf("hash calculation error for %s: %v", event.Name, err)
+				} else {
+					log.Printf("file: %s, hash: %s", event.Name, h)
+					hashValue = h
+				}
+			}
 			fileEvent := &proto.FileEvent{
 				Hostname:  w.hostname,
 				Os:        w.agentOS,
 				FilePath:  event.Name,
 				EventType: eventType,
+				NewHash:   hashValue,
 				Timestamp: time.Now().UnixNano(),
 			}
 			w.onEvent(fileEvent)

@@ -33,7 +33,7 @@ func main() {
 	fmt.Printf("Watch paths: %v\n", cfg.Watch.Paths)
 
 	// Connect to gRPC Server
-	conn, err := grpc.Dial(cfg.Server.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(cfg.Server.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to server: %v", err)
 	}
@@ -52,7 +52,7 @@ func main() {
 
 	//create watcher
 	watcher, err := agent.NewWatcher(cfg, func(ev *proto.FileEvent) {
-		// Log locally
+
 		log.Printf("Local Event: path=%s type=%s", ev.FilePath, ev.EventType.String())
 
 		// Send over gRPC

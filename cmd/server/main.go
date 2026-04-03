@@ -15,7 +15,7 @@ type server struct {
 }
 
 // SendFileEvent receives the stream of file events from the agent
-func (s *server) sendFileEvent(stream proto.FileEventService_SendFileEventServer) error {
+func (s *server) SendFileEvent(stream proto.FileEventService_SendFileEventServer) error {
 	log.Println("New agent connected to steam...")
 
 	for {
@@ -32,7 +32,7 @@ func (s *server) sendFileEvent(stream proto.FileEventService_SendFileEventServer
 			return err
 		}
 
-		log.Printf("[SERVER] Event Received -> Host: %s | OS: %s | Action: %s | File: %s ", event.Hostname, event.Os, event.EventType, event.FilePath)
+		log.Printf("[SERVER] Event Received -> Host: %s | OS: %s | Action: %s | File: %s | Hash: %s ", event.Hostname, event.Os, event.EventType, event.FilePath, event.NewHash)
 	}
 }
 
