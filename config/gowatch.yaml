@@ -9,6 +9,10 @@ watch:
   paths:
     - ./test-watch #change this (for now its for testing)
   recursive: true
+  exclude:
+    - ".git"
+    - ".*tmp"
+    - ".*log"
 
 events:
   include:

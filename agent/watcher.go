@@ -94,6 +94,10 @@ func (w *Watcher) Start(ctx context.Context) error {
 			}
 
 			w.debounce[event.Name] = time.Now()
+			//check if this file is in excluded patterns (.git , *.tmp , *.log)
+			if isExcluded(event.Name, w.cfg.Watch.Exclude) {
+				continue
+			}
 
 			// Keep recursive watching alive for directories created after startup.
 			if w.cfg.Watch.Recursive && event.Op.Has(fsnotify.Create) {
@@ -156,4 +160,21 @@ func opToEventType(op fsnotify.Op) proto.EventType {
 	default:
 		return proto.EventType_UNKNOWN
 	}
+}
+
+func isExcluded(path string, excludePatterns []string) bool {
+	//we care only about the file/folder name not their path
+	baseName := filepath.Base(path)
+
+	for _, pattern := range excludePatterns {
+		matched, err := filepath.Match(pattern, baseName)
+		if err != nil {
+			log.Printf("invalid exclude pattern %s: %v", pattern, err)
+			continue
+		}
+		if matched {
+			return true //it matches. exclude it
+		}
+	}
+	return false //no patterns matched. include it
 }

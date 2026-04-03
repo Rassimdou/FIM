@@ -19,6 +19,7 @@ type ServerConfig struct {
 type WatchConfig struct {
 	Paths     []string `yaml:"paths"`
 	Recursive bool     `yaml:"recursive"`
+	Exclude   []string `yaml:"exclude"`
 }
 type EventConfig struct {
 	Include []string `yaml:"include"`
