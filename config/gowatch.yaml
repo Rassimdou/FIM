@@ -7,9 +7,7 @@ server:
 
 watch:
   paths:
-    - /etc
-    - /var/log
-    - /home
+    - ./test-watch #change this (for now its for testing)
   recursive: true
 
 events:
