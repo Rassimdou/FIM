@@ -8,9 +8,8 @@ import (
 	"os/signal"
 
 	"github.com/Rassimdou/FIM/agent"
+	"github.com/Rassimdou/FIM/agent/network"
 	"github.com/Rassimdou/FIM/proto"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -32,46 +31,31 @@ func main() {
 	fmt.Printf("Server     : %s\n", cfg.Server.Address)
 	fmt.Printf("Watch paths: %v\n", cfg.Watch.Paths)
 
-	// Connect to gRPC Server
-	conn, err := grpc.NewClient(cfg.Server.Address, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("Failed to connect to server: %v", err)
-	}
-	defer conn.Close()
-
-	client := proto.NewFileEventServiceClient(conn)
-
-	// Create context for the stream
+	//create context to handle graceful shutdown on Ctrl+C
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	stream, err := client.SendFileEvent(ctx)
-	if err != nil {
-		log.Fatalf("Failed to open stream to server: %v", err)
-	}
+	//initialize our resilient network sender(queue size: 1000)
+	sender := network.NewSender(cfg.Server.Address, 1000)
 
-	//create watcher
+	go sender.Start(ctx)
+
+	//create watcher and tell it to send events to the queue
 	watcher, err := agent.NewWatcher(cfg, func(ev *proto.FileEvent) {
 
 		log.Printf("Local Event: path=%s type=%s", ev.FilePath, ev.EventType.String())
 
-		// Send over gRPC
-		if err := stream.Send(ev); err != nil {
-			log.Printf("Failed to send event to server: %v", err)
-		}
+		//safely put the event in the queue (never blocks)
+		sender.Enqueue(ev)
+
 	})
 	if err != nil {
 		log.Fatalf("failed to create watcher: %v", err)
 	}
 
 	//start watching
+	log.Println("Agent started. Watching for file changes...")
 	if err := watcher.Start(ctx); err != nil {
 		log.Fatalf("watcher error: %v", err)
-	}
-
-	// Close the stream cleanly on exit
-	_, err = stream.CloseAndRecv()
-	if err != nil {
-		log.Printf("Error closing stream: %v", err)
 	}
 }
