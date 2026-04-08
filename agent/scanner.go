@@ -49,7 +49,8 @@ func ScanExistingFiles(ctx context.Context, cfg *Config, onEvent func(*proto.Fil
 			}
 
 			//calculate hash of the file
-			hashValue, err := CalculateHash(path)
+			maxSizeBytes := int64(cfg.Watch.MaxFileSizeMB) * 1024 * 1024
+			hashValue, err := CalculateHash(path, maxSizeBytes)
 			if err != nil {
 				log.Printf("failed to calculate hash for %s: %v", path, err)
 				return nil //skip this file but keep scanning

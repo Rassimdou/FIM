@@ -17,9 +17,10 @@ type ServerConfig struct {
 }
 
 type WatchConfig struct {
-	Paths     []string `yaml:"paths"`
-	Recursive bool     `yaml:"recursive"`
-	Exclude   []string `yaml:"exclude"`
+	Paths         []string `yaml:"paths"`
+	Recursive     bool     `yaml:"recursive"`
+	Exclude       []string `yaml:"exclude"`
+	MaxFileSizeMB int      `yaml:"max_file_size_mb"`
 }
 type EventConfig struct {
 	Include []string `yaml:"include"`
@@ -50,6 +51,10 @@ func LoadConfig(path string) (*Config, error) {
 
 	if err := decoder.Decode(&config); err != nil {
 		return nil, err
+	}
+
+	if config.Watch.MaxFileSizeMB == 0 {
+		config.Watch.MaxFileSizeMB = 50 // Default to 50MB
 	}
 
 	return &config, nil

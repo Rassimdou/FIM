@@ -117,7 +117,8 @@ func (w *Watcher) Start(ctx context.Context) error {
 
 			//calculate hash for create and modify events
 			if eventType == proto.EventType_FILE_MODIFY || eventType == proto.EventType_FILE_CREATE {
-				h, err := CalculateHash(event.Name)
+				maxSizeBytes := int64(w.cfg.Watch.MaxFileSizeMB) * 1024 * 1024
+				h, err := CalculateHash(event.Name, maxSizeBytes)
 				if err != nil {
 					log.Printf("hash calculation error for %s: %v", event.Name, err)
 				} else {

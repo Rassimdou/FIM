@@ -9,6 +9,7 @@ watch:
   paths:
     - ./test-watch #change this (for now its for testing)
   recursive: true
+  max_file_size_mb: 50
   exclude:
     - ".git"
     - ".*tmp"
