@@ -2,27 +2,35 @@ package network
 
 import (
 	"context"
+
 	"log"
 	"time"
 
 	"github.com/Rassimdou/FIM/proto"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/credentials"
 )
 
 // Sender manages the gRPC connection and an internal queue of events.
 type Sender struct {
 	serverAddr string
 	eventQueue chan *proto.FileEvent
+	tlsCreds   credentials.TransportCredentials
 }
 
 // NewSender creates a new Sender with a buffered queue.
-func NewSender(serverAddr string, queueSize int) *Sender {
+func NewSender(serverAddr string, queueSize int, caCert, clientCert, clientKey string) (*Sender, error) {
+	creds, err := LoadClientTLSConfig(caCert, clientCert, clientKey)
+	if err != nil {
+		return nil, err //if TLS fails we cant start the agent
+	}
+
 	return &Sender{
 		serverAddr: serverAddr,
 		// Create a buffered channel to hold events
 		eventQueue: make(chan *proto.FileEvent, queueSize),
-	}
+		tlsCreds:   creds,
+	}, nil
 }
 
 // Enqueue attempts to add an event to the queue. If full, it drops the event to prevent blocking the file watcher.
@@ -61,7 +69,7 @@ func (s *Sender) connectAndSend(ctx context.Context) error {
 	log.Printf("Attempting to connect to server at %s", s.serverAddr)
 
 	//Dial the server (this is non-blocking in gRPC by default)
-	conn, err := grpc.NewClient(s.serverAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(s.serverAddr, grpc.WithTransportCredentials(s.tlsCreds))
 	if err != nil {
 		return err
 	}

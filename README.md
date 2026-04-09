@@ -65,5 +65,5 @@ The endpoint agent is built with robust stability features to prevent crashing e
 ## Security
 This project uses **Mutual TLS (mTLS)** for the gRPC stream. Not only is the data encrypted, but the central server will strictly reject any agent that does not present a cryptographic certificate signed by our own local Certificate Authority (CA).
 
-See the [Security Documentation](docs/security.md) for more details and instructions on generating your local development certificates.
+
 

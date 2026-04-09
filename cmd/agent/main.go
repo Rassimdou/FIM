@@ -36,7 +36,16 @@ func main() {
 	defer stop()
 
 	//initialize our resilient network sender(queue size: 1000)
-	sender := network.NewSender(cfg.Server.Address, 1000)
+	sender, err := network.NewSender(
+		cfg.Server.Address,
+		1000,
+		cfg.Server.CACert,
+		cfg.Server.ClientCert,
+		cfg.Server.ClientKey,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize network sender (TLS error): %v", err)
+	}
 
 	go sender.Start(ctx)
 

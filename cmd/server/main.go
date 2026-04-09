@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 
+	"github.com/Rassimdou/FIM/agent/network"
 	"github.com/Rassimdou/FIM/proto"
 	"google.golang.org/grpc"
 )
@@ -60,13 +61,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	grpcServer := grpc.NewServer()
+	creds, err := network.LoadServerTLSConfig("certs/ca.crt", "certs/server.crt", "certs/server.key")
+	if err != nil {
+		logger.Error("Failed to load mTLS config", "error", err)
+		os.Exit(1)
+	}
+
+	grpcServer := grpc.NewServer(grpc.Creds(creds))
 
 	//attach my custom logic to the engine
 	proto.RegisterFileEventServiceServer(grpcServer, &server{logger: logger})
 
 	//start accapting connections
-	logger.Info("FIM Central Server listening on : 9000")
+	logger.Info("FIM Central Server listening on : 9000 with mTLS enabled")
 	if err := grpcServer.Serve(lis); err != nil {
 		logger.Error("Failed to serve", "error", err)
 		os.Exit(1)

@@ -36,3 +36,28 @@ func LoadClientTLSConfig(caCertPath, clientCertPath, clientKeyPath string) (cred
 
 	return credentials.NewTLS(tlsConfig), nil
 }
+
+func LoadServerTLSConfig(caCertPath, serverCertPath, serverKeyPath string) (credentials.TransportCredentials, error) {
+
+	cert, err := tls.LoadX509KeyPair(serverCertPath, serverKeyPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load server certificate and key: %v", err)
+	}
+
+	caCert, err := os.ReadFile(caCertPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CA certificate: %v", err)
+	}
+
+	certPool := x509.NewCertPool()
+	if !certPool.AppendCertsFromPEM(caCert) {
+		return nil, fmt.Errorf("failed to append CA certificate to pool")
+	}
+
+	tlsConfig := &tls.Config{
+		Certificates: []tls.Certificate{cert},
+		ClientCAs:    certPool,
+		ClientAuth:   tls.RequireAndVerifyClientCert,
+	}
+	return credentials.NewTLS(tlsConfig), nil
+}
