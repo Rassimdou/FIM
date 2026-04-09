@@ -54,5 +54,16 @@ The observability side is planned to make the event stream usable in practice.
 
 The intended event flow is:
 
-`agent -> gRPC stream -> server/event engine -> structured logs -> Loki -> Grafana/Alertmanager`
+`agent -> gRPC stream (mTLS encrypted) -> server/event engine -> structured logs -> Loki -> Grafana/Alertmanager`
+
+## Agent Stability
+The endpoint agent is built with robust stability features to prevent crashing endpoints:
+- **Baseline Scanning:** Establishes initial hashes on startup and reconnects.
+- **Max File Size:** Avoids memory and CPU starvation by skipping hashes for extremely large files (e.g. databases, ISOs).
+- **Race Condition Retries:** Automatically handles temporary file locks (especially on Windows) allowing applications to finish writing data before attempting to compute a file's hash.
+
+## Security
+This project uses **Mutual TLS (mTLS)** for the gRPC stream. Not only is the data encrypted, but the central server will strictly reject any agent that does not present a cryptographic certificate signed by our own local Certificate Authority (CA).
+
+See the [Security Documentation](docs/security.md) for more details and instructions on generating your local development certificates.
 

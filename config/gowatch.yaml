@@ -3,7 +3,10 @@ agent:
 
 server:
   address: localhost:9000
-  tls: false
+  tls: true
+  ca_cert: /certs/ca.crt
+  client_cert: /certs/client.crt
+  client_key: /certs/client.key
 
 watch:
   paths:

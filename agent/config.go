@@ -12,8 +12,11 @@ type AgentConfig struct {
 }
 
 type ServerConfig struct {
-	Address string `yaml:"address"`
-	TLS     bool   `yaml:"tls"`
+	Address    string `yaml:"address"`
+	TLS        bool   `yaml:"tls"`
+	CACert     string `yaml:"ca_cert"`
+	ClientCert string `yaml:"client_cert"`
+	ClientKey  string `yaml:"client_key"`
 }
 
 type WatchConfig struct {
