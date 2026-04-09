@@ -1,0 +1,12 @@
+apiVersion: 1
+
+datasources:
+  - name: Loki
+    type: loki
+    access: proxy
+    # Because Grafana and Loki are running in the same Docker Compose network,
+    # Grafana can just talk to Loki using the service name 'loki'
+    url: http://loki:3100
+    isDefault: true
+    version: 1
+    editable: false
