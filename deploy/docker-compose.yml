@@ -1,5 +1,18 @@
 version: "3.8"
 services:
+  fim-server:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.server
+    ports:
+      - "9000:9000"
+    environment:
+      - LOG_FILE=/var/log/fim/fim.log
+    volumes:
+      - ../certs:/app/certs:ro
+      - ./logs:/var/log/fim
+    restart: unless-stopped
+
   loki:
     image: grafana/loki:3.0.0
     ports:
@@ -7,6 +20,7 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - ./loki-config.yaml:/etc/loki/local-config.yaml 
+    restart: unless-stopped
   
   promtail:
     image: grafana/promtail:3.0.0
@@ -16,6 +30,8 @@ services:
     command: -config.file=/etc/promtail/config.yaml
     depends_on:
       - loki
+      - fim-server
+    restart: unless-stopped
     
   grafana:
     image: grafana/grafana:latest
@@ -23,8 +39,10 @@ services:
       - "3000:3000"
     volumes:
       - ./grafana-datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
+      - ./grafana-dashboards-provider.yaml:/etc/grafana/provisioning/dashboards/provider.yaml
+      - ./grafana-dashboard.json:/etc/grafana/provisioning/dashboards/fim-dashboard.json
     depends_on:
       - loki
-
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    restart: unless-stopped

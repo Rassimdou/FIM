@@ -1,1 +1,8 @@
 certs/
+*.log
+agent.pid
+bin/
+test-watch/
+*.cnf
+.env
+*.exe

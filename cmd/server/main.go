@@ -47,8 +47,20 @@ func (s *server) SendFileEvent(stream proto.FileEventService_SendFileEventServer
 }
 
 func main() {
+	// check if LOG_FILE env var is set
+	var logWriter io.Writer = os.Stdout
+	if logFile := os.Getenv("LOG_FILE"); logFile != "" {
+		f, err := os.OpenFile(logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			slog.Error("Failed to open log file", "error", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		logWriter = io.MultiWriter(os.Stdout, f)
+	}
+
 	//initialize structured logger
-	jsonHandler := slog.NewJSONHandler(os.Stdout, nil)
+	jsonHandler := slog.NewJSONHandler(logWriter, nil)
 	logger := slog.New(jsonHandler)
 
 	//set it as the default logger for the server
